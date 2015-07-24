@@ -2,9 +2,11 @@
 
 runcmd:
 
- - yum -y install easy_install
+ - yum -y install python-setuptools git
  - easy_install pip
  - pip install ansible
- - echo -e "[hosts]\nlocalhost   ansible_connection=local" > ~/ansible_hosts
- - ansible-pull -i ~/ansible_hosts -U git://github.com/major/rackspace-image-importer.git -d /root/
+ - git clone https://github.com/major/rackspace-image-importer.git /root/rackspace-image-importer
+ - "echo \"rackspace_username: username\nrackspace_apikey: apikey\nrackspace_region: ORD\" > /root/rackspace-image-importer/group_vars/all"
+ - cd /root/rackspace-image-importer
+ - ansible-playbook -i hosts.yml playbook.yml
 
