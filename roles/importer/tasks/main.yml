@@ -1,0 +1,103 @@
+---
+
+  - name: Clean up scratch directory
+    file:
+      dest: "{{ scratch_directory }}"
+      state: directory
+
+  - name: Apply updates
+    yum:
+      name: "*"
+      state: latest
+
+  - name: Install development tools
+    yum:
+      name: "@Development Tools"
+      state: present
+
+  - name: Install required packages
+    yum:
+      name: "{{ item }}"
+      state: present
+    with_items: packages
+
+  - name: Install pip with easy_install
+    easy_install:
+      name: pip
+
+  # NOTE(mhayden): The order of package installed here may seem silly, but
+  # you've probably never messed with the disaster that is pbr.
+  # Installing keystoneclient first ensures we get the right version of pbr.
+  - name: Install required python modules with pip
+    pip:
+      name: "{{ item }}"
+      state: present
+    with_items:
+      - ndg-httpsclient
+      - pyasn1
+      - python-keystoneclient
+      - pyrax
+      - pyopenssl
+      - rackspace-novaclient
+
+  - name: Copy various files we will need
+    copy:
+      src: "{{ item }}"
+      dest: "{{ scratch_directory }}/{{item}}"
+    with_items:
+      - blktap2.patch
+
+  - name: Check if vhd-util has already been compiled
+    stat:
+      path: /usr/local/sbin/vhd-util
+    register: vhd_util
+
+  - name: Download Xen 4.4.0 source
+    get_url:
+      force: no
+      url: http://bits.xensource.com/oss-xen/release/4.4.0/xen-4.4.0.tar.gz
+      dest: "{{ scratch_directory }}"
+    when: not vhd_util.stat.exists
+
+  - name: Copy vhd-util build script
+    template:
+      src: build_vhd-util.sh
+      dest: "{{ scratch_directory }}/"
+    when: not vhd_util.stat.exists
+
+  - name: Un-tar the xen source
+    unarchive:
+      src: "{{ scratch_directory }}/xen-4.4.0.tar.gz"
+      dest: "{{ scratch_directory }}/"
+      copy: no
+    when: not vhd_util.stat.exists
+
+  - name: Build vhd-util
+    command: "/bin/bash {{ scratch_directory}}/build_vhd-util.sh"
+    args:
+      creates: /usr/local/sbin/vhd-util
+    when: not vhd_util.stat.exists
+
+  - name: Add xen libs to ldconfig
+    copy:
+      src: ldconfig-xen.conf
+      dest: /etc/ld.so.conf.d/xen.conf
+    when: not vhd_util.stat.exists
+
+  - name: Run ldconfig
+    command: ldconfig
+    when: not vhd_util.stat.exists
+
+  - name: Copy VHD conversion script
+    copy:
+      src: vhdify.py
+      dest: "{{ scratch_directory }}/"
+      mode: 0755
+    tags:
+      - copy_script
+
+  - name: Copy image importer script
+    template:
+      src: import_images.py
+      dest: "{{ scratch_directory }}/"
+      mode: 0755

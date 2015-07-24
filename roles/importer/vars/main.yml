@@ -1,0 +1,25 @@
+---
+
+scratch_directory: /opt/raximage
+
+packages:
+  - acpica-tools
+  - dev86
+  - glib2-devel
+  - glibc-devel
+  - glibc-devel.i686
+  - htop
+  - libaio-devel
+  - libffi-devel
+  - libuuid-devel
+  - ncurses-devel
+  - nload
+  - openssl-devel
+  - qemu-img
+  - p7zip
+  - p7zip-plugins
+  - pixman
+  - pixman-devel
+  - python-devel
+  - python-setuptools
+  - yajl-devel

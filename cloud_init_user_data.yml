@@ -1,0 +1,10 @@
+#cloud-config
+
+runcmd:
+
+ - yum -y install easy_install
+ - easy_install pip
+ - pip install ansible
+ - echo -e "[hosts]\nlocalhost   ansible_connection=local" > ~/ansible_hosts
+ - ansible-pull -i ~/ansible_hosts -U git://github.com/major/rackspace-image-importer.git -d /root/
+
